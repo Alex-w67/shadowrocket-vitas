@@ -70,7 +70,7 @@ def active_rules(text: str) -> list[str]:
             continue
         # 上游个别规则使用空格加 // 作为行尾说明；不能直接按 // 切分，
         # 否则会误伤 RULE-SET 中的 https:// 地址。
-        line = re.split(r"\s+//", line, maxsplit=1)[0].strip()
+        line = re.split(r"\s+(?://|#)", line, maxsplit=1)[0].strip()
         if line:
             result.append(line)
     return result
@@ -80,8 +80,9 @@ def replace_policy(line: str) -> str | None:
     parts = [part.strip() for part in line.split(",")]
     for index in range(2, len(parts)):
         policy = parts[index]
-        if policy in POLICY_MAP:
-            parts[index] = POLICY_MAP[policy]
+        normalized = policy.upper()
+        if normalized in POLICY_MAP:
+            parts[index] = POLICY_MAP[normalized]
             return ",".join(parts)
     return None
 
@@ -105,10 +106,14 @@ def build(cnip: str, lazy: str) -> list[str]:
         if mapped:
             lazy_rules.append(mapped)
 
-    cnip_rules = [
-        line for line in active_rules(cnip)
-        if not line.startswith(("GEOIP,", "FINAL,"))
-    ]
+    cnip_rules: list[str] = []
+    for line in active_rules(cnip):
+        if line.startswith(("GEOIP,", "FINAL,")):
+            continue
+        mapped = replace_policy(line)
+        if not mapped:
+            raise ValueError(f"unrecognized CNIP policy: {line}")
+        cnip_rules.append(mapped)
 
     rules = [
         "# 一、精细服务分流（来自懒人配置的持续维护规则源）",
