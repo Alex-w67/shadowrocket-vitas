@@ -29,7 +29,7 @@ GitHub Actions每天北京时间08:20抓取并合并：
 Shadowrocket订阅地址为：
 
 ```text
-https://raw.githubusercontent.com/你的GitHub用户名/shadowrocket-vitas/main/vitas_shadowrocket.conf
+https://raw.githubusercontent.com/Alex-w67/shadowrocket-vitas/main/vitas_shadowrocket.conf
 ```
 
 首次导入后，在“配置 → 本地文件”选中本配置。建议通过iOS快捷指令在每天08:30触发一次配置更新。
