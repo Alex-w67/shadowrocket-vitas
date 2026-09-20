@@ -1,0 +1,42 @@
+name: Update Shadowrocket configuration
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 每天北京时间 08:20，在上游 08:00 构建完成后运行。
+    - cron: "20 0 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "config/**"
+      - "scripts/**"
+      - ".github/workflows/update.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shadowrocket-daily-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build and validate
+        run: python scripts/build.py --repository "$GITHUB_REPOSITORY"
+      - name: Publish only a valid change
+        run: |
+          if git diff --quiet -- vitas_shadowrocket.conf; then
+            echo "No rule changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vitas_shadowrocket.conf
+          git commit -m "chore: update rules $(date -u +%F)"
+          git push
